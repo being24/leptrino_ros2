@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(leptrino-ros2)
+project(leptrino_ros2)
 
 find_package(ament_cmake REQUIRED)
 

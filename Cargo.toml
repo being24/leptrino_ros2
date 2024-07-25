@@ -1,5 +1,5 @@
 [package]
-name = "leptrino-ros2"
+name = "leptrino_ros2"
 version = "0.1.0"
 edition = "2021"
 

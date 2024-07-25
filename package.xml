@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
-  <name>leptrino-ros2</name>
+  <name>leptrino_ros2</name>
   <version>0.0.1</version>
   <description>r2r node for leptrino sensor</description>
   <maintainer email="34680324+being24@users.noreply.github.com">Being24</maintainer>
