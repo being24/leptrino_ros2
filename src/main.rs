@@ -1,5 +1,7 @@
 use leptrino_force_torque_sensor::serialport;
 use leptrino_force_torque_sensor::{LeptrinoSensor, Product};
+use r2r::builtin_interfaces::msg::Time;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{error, info, Level};
 use tracing_subscriber;
 
@@ -23,6 +25,16 @@ fn search_usb_sensor_path() -> Result<Option<String>, serialport::Error> {
         .next();
 
     Ok(path)
+}
+
+fn get_current_time() -> Time {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    Time {
+        sec: now.as_secs() as i32,
+        nanosec: now.subsec_nanos(),
+    }
 }
 
 fn initialize_sensor() -> Option<LeptrinoSensor> {
@@ -79,7 +91,10 @@ fn main() {
     let mut node =
         r2r::Node::create(ctx, "leptrino_sensor", "").expect("Failed to create r2r node.");
     let pub_wrench = node
-        .create_publisher::<r2r::geometry_msgs::msg::Wrench>("/wrench", r2r::QosProfile::default())
+        .create_publisher::<r2r::geometry_msgs::msg::WrenchStamped>(
+            "/wrench",
+            r2r::QosProfile::default(),
+        )
         .expect("Failed to create r2r publisher.");
 
     info!("ros2 node initialized.");
@@ -88,19 +103,27 @@ fn main() {
     // publish sensor data
     loop {
         std::thread::sleep(sensor.inner_port().timeout());
+
+        // let now =
         match sensor.update() {
             Ok(w) => {
                 pub_wrench
-                    .publish(&r2r::geometry_msgs::msg::Wrench {
-                        force: r2r::geometry_msgs::msg::Vector3 {
-                            x: w.force.x,
-                            y: w.force.y,
-                            z: w.force.z,
+                    .publish(&r2r::geometry_msgs::msg::WrenchStamped {
+                        header: r2r::std_msgs::msg::Header {
+                            stamp: get_current_time(),
+                            frame_id: "leptrino_sensor".to_string(),
                         },
-                        torque: r2r::geometry_msgs::msg::Vector3 {
-                            x: w.torque.x,
-                            y: w.torque.y,
-                            z: w.torque.z,
+                        wrench: r2r::geometry_msgs::msg::Wrench {
+                            force: r2r::geometry_msgs::msg::Vector3 {
+                                x: w.force.x,
+                                y: w.force.y,
+                                z: w.force.z,
+                            },
+                            torque: r2r::geometry_msgs::msg::Vector3 {
+                                x: w.torque.x,
+                                y: w.torque.y,
+                                z: w.torque.z,
+                            },
                         },
                     })
                     .unwrap_or_else(|e| error!("Failed to publish: {}", e));
